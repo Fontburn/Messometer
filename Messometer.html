@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Data Messometer</title>
+  <style>
+    :root {
+      /* Tweak these two to drop the pivot exactly on your blue circle */
+      --pivot-left: 43.5%;  /* <-- adjust to move horizontally */
+      --pivot-top:  80.8%;  /* <-- adjust to move vertically   */
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+    }
+
+    h1 { margin-bottom: 12px; }
+
+    /* Meter container anchors overlayed pieces */
+    .meter {
+      position: relative;
+      display: inline-block;
+      line-height: 0; /* removes stray descender space */
+    }
+
+    /* Base image scales responsively */
+    .base {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: 95vw;
+    }
+
+    /* Needle positioned by its pivot (left/top), then rotated about that pivot */
+    .needle {
+      position: absolute;
+
+      /* Length of the needle in CSS pixels; change if your image is very large/small */
+      width: 360px;
+      height: 40px;
+
+      /* Put the pivot (0,50%) of the SVG at these percentages over the base image */
+      left: var(--pivot-left);
+      top: var(--pivot-top);
+
+      /* The pivot of the SVG is at its left middle (0, 50%) */
+      transform-origin: 0 50%;
+      transform: rotate(var(--angle, -95deg)); /* default at Pristine (~9 o'clock) */
+
+      pointer-events: none;
+    }
+
+    .controls {
+      margin-top: 24px;
+      width: 700px;
+      max-width: 95vw;
+    }
+
+    input[type="range"] { width: 100%; }
+
+    .labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: #555;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Data Messometer</h1>
+
+  <div class="meter">
+    <!-- IMPORTANT: image must exist next to this HTML file -->
+    <img
+      src="./data messometer.jpg"
+      alt="Data Messometer"
+      class="base"
+      id="baseImage"
+    />
+
+    <!-- Needle SVG: pivot sits at x=0, y=50% so we can rotate without extra translate -->
+    <img
+      id="needle"
+      class="needle"
+      alt="Needle"
+      src="data:image/svg+xml;utf8,
+      <svg xmlns='http://www.w3.org/2000/svg' width='360' height='40' viewBox='0 0 360 40'>
+        <!-- thicker needle with pointed end -->
+        <polygon points='0,6 348,20 0,34' fill='black'/>
+        <!-- pivot circle (center is exactly on the left edge, so transform-origin: 0 50% works) -->
+        <circle cx='0' cy='20' r='10' fill='black'/>
+      </svg>"
+    />
+  </div>
+
+  <div class="controls">
+    <!-- Use 0..100 for easier mapping and labels -->
+    <input type="range" id="slider" min="0" max="100" value="0" />
+    <div class="labels">
+      <span>Pristine</span>
+      <span>Okay</span>
+      <span>Dystopian</span>
+    </div>
+  </div>
+
+  <script>
+    const slider = document.getElementById('slider');
+    const needle = document.getElementById('needle');
+
+    // --- Calibrate your sweep here ---
+    // Approximate sweep of your printed gauge:
+    //   Pristine ≈ 9 o'clock  => about -95 degrees (left)
+    //   Dystopian ≈ 1 o'clock => about +30 degrees (right)
+    // If yours looks a bit different, just tweak these two numbers.
+    const ANGLE_MIN = -170; // slider=0 ("Pristine")
+    const ANGLE_MAX =  7; // slider=100 ("Dystopian")
+
+    function updateAngle() {
+      const t = (slider.value - slider.min) / (slider.max - slider.min); // 0..1
+      const angle = ANGLE_MIN + (ANGLE_MAX - ANGLE_MIN) * t;
+      needle.style.setProperty('--angle', `${angle}deg`);
+    }
+
+    slider.addEventListener('input', updateAngle);
+    updateAngle();
+
+    // Debug: warn if image fails to load
+    document.getElementById('baseImage').addEventListener('error', () => {
+      alert('Gauge image not found. Make sure "data messometer.jpg" is in the same folder as this HTML file.');
+    });
+  </script>
+</body>
+</html>
